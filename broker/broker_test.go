@@ -1,9 +1,9 @@
 package broker
 
 import (
-	"testing"
-	"os"
 	"log"
+	"os"
+	"testing"
 
 	"github.com/nsqio/go-nsq"
 	"github.com/xuqingfeng/pagestat/vars"

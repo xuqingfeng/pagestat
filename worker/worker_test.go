@@ -1,9 +1,9 @@
 package worker
 
 import (
+	"log"
 	"os"
 	"testing"
-	"log"
 
 	"github.com/nsqio/go-nsq"
 	"github.com/xuqingfeng/pagestat/vars"
@@ -11,13 +11,12 @@ import (
 
 func TestConsumer(t *testing.T) {
 
-	config := NewConfig()
-	config.NsqLookupdAddr = "127.0.0.1:4161"
+	testConfig := NewConfig()
+	testConfig.NsqLookupdAddr = "127.0.0.1:4161"
 	channelName, err := os.Hostname()
 	if err != nil {
 		channelName = "undefined"
 	}
-	t.Logf("I! channelName %s", channelName)
 	consumer, err := nsq.NewConsumer(vars.Topic, channelName, nsq.NewConfig())
 
 	logger := log.New(os.Stdout, "[pagestat] worker ", 1)
@@ -27,7 +26,7 @@ func TestConsumer(t *testing.T) {
 		t.Fatalf("E! create nsq consumer fail %v", err)
 	}
 	worker := NewWorker()
-	worker.Config = config
+	worker.Config = testConfig
 	worker.Consumer = consumer
 	defer worker.Stop()
 

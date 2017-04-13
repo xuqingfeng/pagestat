@@ -33,7 +33,7 @@ func (b *Broker) Publish(task vars.Task) error {
 	return b.Producer.Publish(vars.Topic, dataInJSON)
 }
 
-func (b *Broker) Stop () {
+func (b *Broker) Stop() {
 
 	b.Producer.Stop()
 }
