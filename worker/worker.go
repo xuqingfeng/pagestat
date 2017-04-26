@@ -41,14 +41,8 @@ func (w *Worker) HandleMessage(message *nsq.Message) error {
 	if err != nil {
 		return err
 	}
-	logFile, err := os.OpenFile("test_data.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		return err
-	}
-	defer logFile.Close()
+	// TODO: 2017/4/26 handle message
 
-	log.SetOutput(logFile)
-	log.Printf("I! got message %+v\n", task)
 	w.Unlock()
 	return nil
 }

@@ -1,6 +1,7 @@
 # https://github.com/segmentio/nsq-go/blob/master/docker-compose.yml
 # https://github.com/starbucks-china/fraud-integration/blob/2676a095fb5d225734a8f70f89e1641333f98a47/dockers/docker-compose.yml
 # https://github.com/nsqio/nsq/issues/516
+# https://docs.docker.com/compose/environment-variables/#the-env-file
 
 version: '2'
 services:
