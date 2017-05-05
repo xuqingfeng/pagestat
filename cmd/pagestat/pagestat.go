@@ -3,8 +3,8 @@ package main
 import (
 	"flag"
 	"os"
+	"log"
 
-	"github.com/cloudflare/cfssl/log"
 	"github.com/nsqio/go-nsq"
 	"github.com/xuqingfeng/pagestat/vars"
 	"github.com/xuqingfeng/pagestat/worker"
@@ -45,7 +45,7 @@ func main() {
 
 		err = w.Consume()
 		if err != nil {
-			log.Errorf("E! consume task fail %s", err.Error())
+			log.Printf("E! consume task fail %s", err.Error())
 		}
 	default:
 		flag.Usage()
