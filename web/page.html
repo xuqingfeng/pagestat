@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="/assets/libs/bulma/0.4.1/bulma.css">
+    <script type="text/javascript" src="//www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">
+        google.charts.load('current', {'packages': ['timeline']});
+        google.charts.setOnLoadCallback(drawChart);
+        function drawChart() {
+            var container = document.getElementById('timeline');
+            var chart = new google.visualization.Timeline(container);
+            var dataTable = new google.visualization.DataTable();
+
+            dataTable.addColumn({type: 'string', id: 'Location'});
+            dataTable.addColumn({type: 'string', id: 'Action'});
+            dataTable.addColumn({type: 'number', id: 'Start'});
+            dataTable.addColumn({type: 'number', id: 'End'});
+            dataTable.addRows([
+                ['Rome', 'DNS Lookup', 0, 184],
+                ['Rome', 'TCP Connection', 184, 200],
+                ['Rome', 'TLS Handshake', 200, 400],
+                ['Rome', 'Server Processing', 400, 800],
+
+                ['Milan', 'DNS Lookup', 0, 222],
+                ['Milan', 'TCP Connection', 222, 300],
+                ['Milan', 'TLS Handshake', 300, 400],
+                ['Milan', 'Server Processing', 400, 3000],
+
+                ['Naples', 'DNS Lookup', 0, 184],
+                ['Naples', 'TCP Connection', 184, 200],
+                ['Naples', 'TLS Handshake', 200, 200],
+                ['Naples', 'Server Processing', 200, 800],
+            ]);
+
+            chart.draw(dataTable);
+        }
+    </script>
+</head>
+<body>
+
+<div class="section">
+    <div class="container">
+        <nav class="nav">
+            <div class="nav-left">
+                <a class="nav-item">
+                    PageStat
+                </a>
+            </div>
+            <div class="nav-right nav-menu">
+                <div class="nav-item">
+                    <a class="button" href="https://github.com/xuqingfeng/pagestat" target="_blank">
+                        GITHUB
+                    </a>
+                </div>
+            </div>
+        </nav>
+    </div>
+</div>
+
+<div class="section">
+    <div class="container">
+        <div class="columns">
+            <div class="column is-3"></div>
+            <div class="column is-6">
+                <div class="field has-addons has-addons-centered">
+                    <p class="control is-expanded">
+                        <input type="text" class="input" placeholder="https://example.com">
+                    </p>
+                    <p class="control">
+                        <a class="button is-info">Detect</a>
+                    </p>
+                </div>
+            </div>
+            <div class="column is-3"></div>
+        </div>
+    </div>
+</div>
+
+<div class="section">
+    <div class="container">
+        <div id="timeline" style="height: 180px;"></div>
+    </div>
+</div>
+</body>
+</html>
