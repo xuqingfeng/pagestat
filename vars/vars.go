@@ -2,10 +2,11 @@
 package vars
 
 const (
-	Topic = "pagestat"
+	Channel = "pagestat"
 )
 
 type Task struct {
+	UUID string `json:"uuid"`
 	Url  string `json:"url"`
 	Cron string `json:"cron"` // 1h, 2m, 30s ...
 }

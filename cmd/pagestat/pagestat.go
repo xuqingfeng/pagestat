@@ -2,17 +2,17 @@ package main
 
 import (
 	"flag"
-	"os"
 	"log"
 
-	"github.com/nsqio/go-nsq"
-	"github.com/xuqingfeng/pagestat/vars"
+	"github.com/garyburd/redigo/redis"
+	"github.com/xuqingfeng/pagestat/broker"
 	"github.com/xuqingfeng/pagestat/worker"
 )
 
 var (
-	mode       string
-	nsqlookupd string
+	mode          string
+	redisUrl      string
+	redisPassword string
 )
 
 func main() {
@@ -20,27 +20,38 @@ func main() {
 	finish := make(chan bool)
 
 	// broker/worker mode
-	flag.StringVar(&mode, "mode", "", "mode(broker/workder)")
-	flag.StringVar(&nsqlookupd, "nsqlookupd", "", "nsqlookupd http address")
+	flag.StringVar(&mode, "mode", "", "mode(broker/worker)")
+	flag.StringVar(&redisUrl, "redisUrl", "", "redis address")
+	flag.StringVar(&redisPassword, "redisPassword", "", "redis password")
 	flag.Parse()
-
-	channelName, err := os.Hostname()
-	if err != nil {
-		channelName = "undefined"
-	}
 
 	switch mode {
 	case "broker":
 
-	case "worker":
-		consumer, err := nsq.NewConsumer(vars.Topic, channelName, nsq.NewConfig())
+		b := broker.NewBroker()
+		b.Config = broker.NewConfig()
+		b.Config.RedisURL = redisUrl
+		b.Config.RedisPassword = redisPassword
+		brokerConn, err := redis.DialURL(b.Config.RedisURL, redis.DialPassword(b.Config.RedisPassword))
 		if err != nil {
-			log.Fatalf("E! create nsq consumer fail %s", err.Error())
+			log.Fatal(err)
 		}
+		b.Conn = brokerConn
+		defer b.Stop()
+
+		// TODO: PUBLISH
+
+	case "worker":
+
 		w := worker.NewWorker()
 		w.Config = worker.NewConfig()
-		w.Config.NsqLookupdAddr = nsqlookupd
-		w.Consumer = consumer
+		w.Config.RedisUrl = redisUrl
+		w.Config.RedisPassword = redisPassword
+		workerConn, err := redis.DialURL(w.Config.RedisUrl, redis.DialPassword(w.Config.RedisPassword))
+		if err != nil {
+			log.Fatal(err)
+		}
+		w.Conn = workerConn
 		defer w.Stop()
 
 		err = w.Consume()

@@ -1,7 +1,8 @@
 package broker
 
 type Config struct {
-	NsqdAddr string
+	RedisURL      string
+	RedisPassword string
 }
 
 func NewConfig() *Config {

@@ -1,22 +1,7 @@
-# https://github.com/segmentio/nsq-go/blob/master/docker-compose.yml
-# https://github.com/starbucks-china/fraud-integration/blob/2676a095fb5d225734a8f70f89e1641333f98a47/dockers/docker-compose.yml
-# https://github.com/nsqio/nsq/issues/516
-# https://docs.docker.com/compose/environment-variables/#the-env-file
-
 version: '2'
 services:
-  nsqlookupd:
-    image: nsqio/nsq
-    command: /nsqlookupd
+  redis:
+    image: redis:alpine
+    command: redis-server --requirepass redis
     ports:
-      - "4160-4161:4160-4161"
-  nsqd:
-    image: nsqio/nsq
-    command: /nsqd --lookupd-tcp-address=nsqlookupd:4160 --broadcast-address=192.168.1.102
-    ports:
-      - "4150-4151:4150-4151"
-  nsqadmin:
-    image: nsqio/nsq
-    command: /nsqadmin --lookupd-http-address=nsqlookupd:4161
-    ports:
-      - "4171:4171"
+      - "6379:6379"

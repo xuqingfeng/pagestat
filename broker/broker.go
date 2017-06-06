@@ -4,13 +4,13 @@ package broker
 import (
 	"encoding/json"
 
-	"github.com/nsqio/go-nsq"
+	"github.com/garyburd/redigo/redis"
 	"github.com/xuqingfeng/pagestat/vars"
 )
 
 type Broker struct {
-	Config   *Config
-	Producer *nsq.Producer
+	Config *Config
+	Conn   redis.Conn
 }
 
 func NewBroker() *Broker {
@@ -20,20 +20,15 @@ func NewBroker() *Broker {
 
 func (b *Broker) Publish(task vars.Task) error {
 
-	// ping check nsq connection
-	err := b.Producer.Ping()
+	taskInBytes, err := json.Marshal(task)
 	if err != nil {
 		return err
 	}
-
-	dataInJSON, err := json.Marshal(task)
-	if err != nil {
-		return err
-	}
-	return b.Producer.Publish(vars.Topic, dataInJSON)
+	_, err = b.Conn.Do("PUBLISH", vars.Channel, taskInBytes)
+	return err
 }
 
 func (b *Broker) Stop() {
 
-	b.Producer.Stop()
+	b.Conn.Close()
 }

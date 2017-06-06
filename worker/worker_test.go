@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/garyburd/redigo/redis"
 	"github.com/nsqio/go-nsq"
 	"github.com/xuqingfeng/pagestat/vars"
 )
@@ -12,22 +13,18 @@ import (
 func TestConsumer(t *testing.T) {
 
 	testConfig := NewConfig()
-	testConfig.NsqLookupdAddr = "127.0.0.1:4161"
-	channelName, err := os.Hostname()
-	if err != nil {
-		channelName = "undefined"
-	}
-	consumer, err := nsq.NewConsumer(vars.Topic, channelName, nsq.NewConfig())
+	testConfig.RedisUrl = "redis://127.0.0.1:6379"
+	testConfig.RedisPassword = "redis"
 
-	logger := log.New(os.Stdout, "[pagestat] worker ", 1)
-	consumer.SetLogger(logger, 1)
-
+	do := redis.DialPassword(testConfig.RedisPassword)
+	testConn, err := redis.DialURL(testConfig.RedisUrl, do)
 	if err != nil {
-		t.Fatalf("E! create nsq consumer fail %v", err)
+		t.Fatalf("E! create redis connection fail %v", err)
 	}
+
 	worker := NewWorker()
 	worker.Config = testConfig
-	worker.Consumer = consumer
+	worker.Conn = testConn
 	defer worker.Stop()
 
 	err = worker.Consume()

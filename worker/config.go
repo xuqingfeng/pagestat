@@ -1,7 +1,8 @@
 package worker
 
 type Config struct {
-	NsqLookupdAddr string
+	RedisUrl      string
+	RedisPassword string
 }
 
 func NewConfig() *Config {

@@ -2,18 +2,10 @@
 	"version": 0,
 	"dependencies": [
 		{
-			"importpath": "github.com/golang/snappy",
-			"repository": "https://github.com/golang/snappy",
+			"importpath": "github.com/garyburd/redigo",
+			"repository": "https://github.com/garyburd/redigo",
 			"vcs": "git",
-			"revision": "553a641470496b2327abcac10b36396bd98e45c9",
-			"branch": "master",
-			"notests": true
-		},
-		{
-			"importpath": "github.com/nsqio/go-nsq",
-			"repository": "https://github.com/nsqio/go-nsq",
-			"vcs": "git",
-			"revision": "b9762cdcb6d5cc5ac5287ca076354143d332cc97",
+			"revision": "95d11dba2d44531bdb8022752b98912baafae03a",
 			"branch": "master",
 			"notests": true
 		}
