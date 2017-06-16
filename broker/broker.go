@@ -4,13 +4,12 @@ package broker
 import (
 	"encoding/json"
 
-	"github.com/garyburd/redigo/redis"
+	"github.com/go-redis/redis"
 	"github.com/xuqingfeng/pagestat/vars"
 )
 
 type Broker struct {
-	Config *Config
-	Conn   redis.Conn
+	Client *redis.Client
 }
 
 func NewBroker() *Broker {
@@ -24,11 +23,11 @@ func (b *Broker) Publish(task vars.Task) error {
 	if err != nil {
 		return err
 	}
-	_, err = b.Conn.Do("PUBLISH", vars.Channel, taskInBytes)
+	_, err = b.Client.Publish(vars.Channel, string(taskInBytes)).Result()
 	return err
 }
 
 func (b *Broker) Stop() {
 
-	b.Conn.Close()
+	b.Client.Close()
 }

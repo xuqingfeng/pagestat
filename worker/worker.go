@@ -3,18 +3,16 @@ package worker
 
 import (
 	"encoding/json"
-	"errors"
 	"log"
 	"time"
 
-	"github.com/garyburd/redigo/redis"
+	"github.com/go-redis/redis"
 	"github.com/xuqingfeng/pagestat/trace"
 	"github.com/xuqingfeng/pagestat/vars"
 )
 
 type Worker struct {
-	Config *Config
-	Conn   redis.Conn
+	Client *redis.Client
 }
 
 func NewWorker() *Worker {
@@ -22,33 +20,67 @@ func NewWorker() *Worker {
 	return &Worker{}
 }
 
-func (w *Worker) Consume() error {
+// TODO: fix hold on in test
+func (w *Worker) Consume(redisUrl, redisPassword string) error {
 
-	psc := redis.PubSubConn{Conn: w.Conn}
-	psc.Subscribe(vars.Channel)
+	pubsub := w.Client.Subscribe(vars.Channel)
+	//defer pubsub.Close()
+
+	newClient := redis.NewClient(&redis.Options{
+		Addr: redisUrl,
+		Password: redisPassword,
+	})
+	//defer newClient.Close()
+
 	for {
-		switch v := psc.Receive().(type) {
-		case redis.Message:
-			go func() {
-				// trace and store results to redis
-				taskInBytes := byte(v.Data)
-				var t vars.Task
-				err := json.Unmarshal(taskInBytes, &t)
-				if err != nil {
-					log.Println(err)
-				}
-				ret := w.trace(t)
-				retInBytes, err := json.Marshal(ret)
-				if err != nil {
-					log.Println(err)
-				}
-				err = w.store(t.UUID, string(retInBytes))
-				if err != nil {
-					log.Println(err)
-				}
-			}()
-		case error:
-			log.Println(v.Error())
+		msgi, err := pubsub.ReceiveTimeout(time.Second * 5)
+		if err != nil {
+			log.Println(err)
+		}
+		//
+		//// trace and store results to redis
+		//var t vars.Task
+		//err = json.Unmarshal([]byte(msgi.Payload), &t)
+		//if err != nil {
+		//	return err
+		//}
+		//
+		//ret := w.trace(t)
+		//retInByte, err := json.Marshal(ret)
+		//if err != nil {
+		//	log.Println(err)
+		//	return err
+		//}
+
+		//err = w.store(newClient, t.UUID, string(retInByte))
+		//if err != nil {
+		//	log.Println(err)
+		//	return err
+		//}
+
+		switch msg := msgi.(type) {
+		case *redis.Subscription:
+		// do nothing
+		case *redis.Message:
+
+			// trace and store results to redis
+			var t vars.Task
+			err := json.Unmarshal([]byte(msg.Payload), &t)
+			if err != nil {
+				return err
+			}
+
+			ret := w.trace(t)
+			retInByte, err := json.Marshal(ret)
+			if err != nil {
+				log.Println(err)
+				return err
+			}
+			err = w.store(newClient, t.UUID, string(retInByte))
+			if err != nil {
+				log.Println(err)
+				return err
+			}
 		}
 	}
 	return nil
@@ -69,14 +101,12 @@ func (w *Worker) trace(task vars.Task) map[string]time.Duration {
 	return l
 }
 
-func (w *Worker) store(uuid, result string) error {
+func (w *Worker) store(client *redis.Client, uuid, result string) error {
 
-	val, err := w.Conn.Do("SET", uuid, result, "NX", "EX", "120")
+	client.Set("test", "test", time.Second * 120)
+	err := client.Set(uuid, result, time.Second * 120).Err()
 	if err != nil {
 		return err
-	}
-	if val == nil {
-		return errors.New("uuid conflict")
 	}
 
 	return nil
@@ -84,5 +114,5 @@ func (w *Worker) store(uuid, result string) error {
 
 func (w *Worker) Stop() {
 
-	w.Conn.Close()
+	w.Client.Close()
 }

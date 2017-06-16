@@ -1,7 +1,7 @@
 deps:
 	docker-compose up -d
 
-test:
+test: deps
 	go test -v $$(go list ./... | grep -v /vendor/)
 
 fmt:

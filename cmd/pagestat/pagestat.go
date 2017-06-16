@@ -4,7 +4,7 @@ import (
 	"flag"
 	"log"
 
-	"github.com/garyburd/redigo/redis"
+	"github.com/go-redis/redis"
 	"github.com/xuqingfeng/pagestat/broker"
 	"github.com/xuqingfeng/pagestat/worker"
 )
@@ -21,7 +21,7 @@ func main() {
 
 	// broker/worker mode
 	flag.StringVar(&mode, "mode", "", "mode(broker/worker)")
-	flag.StringVar(&redisUrl, "redisUrl", "", "redis address")
+	flag.StringVar(&redisUrl, "redisUrl", "", "redis url")
 	flag.StringVar(&redisPassword, "redisPassword", "", "redis password")
 	flag.Parse()
 
@@ -29,32 +29,38 @@ func main() {
 	case "broker":
 
 		b := broker.NewBroker()
-		b.Config = broker.NewConfig()
-		b.Config.RedisURL = redisUrl
-		b.Config.RedisPassword = redisPassword
-		brokerConn, err := redis.DialURL(b.Config.RedisURL, redis.DialPassword(b.Config.RedisPassword))
+
+		client := redis.NewClient(&redis.Options{
+			Addr:     redisUrl,
+			Password: redisPassword,
+		})
+		err := client.Ping().Err()
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("E! create redis connection fail %v", err)
 		}
-		b.Conn = brokerConn
+
+		b.Client = client
 		defer b.Stop()
 
-		// TODO: PUBLISH
+		// TODO: listen API request and PUBLISH message
 
 	case "worker":
 
 		w := worker.NewWorker()
-		w.Config = worker.NewConfig()
-		w.Config.RedisUrl = redisUrl
-		w.Config.RedisPassword = redisPassword
-		workerConn, err := redis.DialURL(w.Config.RedisUrl, redis.DialPassword(w.Config.RedisPassword))
+
+		client := redis.NewClient(&redis.Options{
+			Addr:     redisUrl,
+			Password: redisPassword,
+		})
+		err := client.Ping().Err()
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("E! create redis connection fail %v", err)
 		}
-		w.Conn = workerConn
+
+		w.Client = client
 		defer w.Stop()
 
-		err = w.Consume()
+		err = w.Consume(redisUrl, redisPassword)
 		if err != nil {
 			log.Printf("E! consume task fail %s", err.Error())
 		}

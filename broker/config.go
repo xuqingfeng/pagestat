@@ -1,7 +1,7 @@
 package broker
 
 type Config struct {
-	RedisURL      string
+	RedisUrl      string
 	RedisPassword string
 }
 

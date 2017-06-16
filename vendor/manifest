@@ -2,10 +2,10 @@
 	"version": 0,
 	"dependencies": [
 		{
-			"importpath": "github.com/garyburd/redigo",
-			"repository": "https://github.com/garyburd/redigo",
+			"importpath": "github.com/go-redis/redis",
+			"repository": "https://github.com/go-redis/redis",
 			"vcs": "git",
-			"revision": "95d11dba2d44531bdb8022752b98912baafae03a",
+			"revision": "eb066030c08c254136a0dbfe9f7a3625a0871beb",
 			"branch": "master",
 			"notests": true
 		}
