@@ -57,10 +57,10 @@ func main() {
 			log.Fatalf("E! create redis connection fail %v", err)
 		}
 
-		w.Client = client
 		defer w.Stop()
 
-		err = w.Consume(redisUrl, redisPassword)
+		subChan := make(chan string)
+		err = w.Consume(subChan)
 		if err != nil {
 			log.Printf("E! consume task fail %s", err.Error())
 		}

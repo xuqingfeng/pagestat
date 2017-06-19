@@ -20,69 +20,40 @@ func NewWorker() *Worker {
 	return &Worker{}
 }
 
-// TODO: fix hold on in test
-func (w *Worker) Consume(redisUrl, redisPassword string) error {
+func (w *Worker) Consume(subChan chan string) error {
 
 	pubsub := w.Client.Subscribe(vars.Channel)
 	//defer pubsub.Close()
 
-	newClient := redis.NewClient(&redis.Options{
-		Addr: redisUrl,
-		Password: redisPassword,
-	})
-	//defer newClient.Close()
-
-	for {
-		msgi, err := pubsub.ReceiveTimeout(time.Second * 5)
-		if err != nil {
-			log.Println(err)
-		}
-		//
-		//// trace and store results to redis
-		//var t vars.Task
-		//err = json.Unmarshal([]byte(msgi.Payload), &t)
-		//if err != nil {
-		//	return err
-		//}
-		//
-		//ret := w.trace(t)
-		//retInByte, err := json.Marshal(ret)
-		//if err != nil {
-		//	log.Println(err)
-		//	return err
-		//}
-
-		//err = w.store(newClient, t.UUID, string(retInByte))
-		//if err != nil {
-		//	log.Println(err)
-		//	return err
-		//}
-
-		switch msg := msgi.(type) {
-		case *redis.Subscription:
-		// do nothing
-		case *redis.Message:
-
-			// trace and store results to redis
-			var t vars.Task
-			err := json.Unmarshal([]byte(msg.Payload), &t)
-			if err != nil {
-				return err
-			}
-
-			ret := w.trace(t)
-			retInByte, err := json.Marshal(ret)
+	go func() {
+		for {
+			msgi, err := pubsub.Receive()
 			if err != nil {
 				log.Println(err)
-				return err
 			}
-			err = w.store(newClient, t.UUID, string(retInByte))
-			if err != nil {
-				log.Println(err)
-				return err
+
+			switch msg := msgi.(type) {
+			case *redis.Subscription:
+			// do nothing
+			case *redis.Message:
+
+				// trace and TODO: store results to redis
+				var t vars.Task
+				err := json.Unmarshal([]byte(msg.Payload), &t)
+				if err != nil {
+					log.Println(err)
+				}
+
+				ret := w.trace(t)
+				retInByte, err := json.Marshal(ret)
+				if err != nil {
+					log.Println(err)
+				}
+				subChan <- string(retInByte)
 			}
 		}
-	}
+	}()
+
 	return nil
 }
 
@@ -101,10 +72,10 @@ func (w *Worker) trace(task vars.Task) map[string]time.Duration {
 	return l
 }
 
-func (w *Worker) store(client *redis.Client, uuid, result string) error {
+// https://www.toptal.com/go/going-real-time-with-redis-pubsub
+func (w *Worker) store(uuid, result string) error {
 
-	client.Set("test", "test", time.Second * 120)
-	err := client.Set(uuid, result, time.Second * 120).Err()
+	err := w.Client.Set(uuid, result, time.Second*120).Err()
 	if err != nil {
 		return err
 	}

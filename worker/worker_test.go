@@ -2,11 +2,10 @@ package worker
 
 import (
 	"testing"
+	"encoding/json"
 
 	"github.com/go-redis/redis"
-	"github.com/xuqingfeng/pagestat/broker"
 	"github.com/xuqingfeng/pagestat/vars"
-	"time"
 )
 
 func TestConsumer(t *testing.T) {
@@ -27,50 +26,33 @@ func TestConsumer(t *testing.T) {
 	w := NewWorker()
 	w.Client = testClient
 
-	b := broker.NewBroker()
-	b.Client = testClient
+	t.Log("I! comsuming")
+	subChan := make(chan string)
+	err = w.Consume(subChan)
+	if err != nil {
+		t.Errorf("E! consume task fail %v", err)
+	}
 
-	//defer testClient.Close()
-
-	//err = testClient.Set("test", "test", time.Second * 200).Err()
-	//if err != nil {
-	//	t.Errorf("E! set fail %v", err)
-	//}
-
-	go func() {
-		t.Log("I! comsuming")
-
-		err = w.Consume(testConfig.RedisUrl, testConfig.RedisPassword)
-		if err != nil {
-			t.Errorf("E! consume task fail %v", err)
-		}
-	}()
-
+	// publish message
+	t.Log("I! publishing")
+	pubClient := redis.NewClient(&redis.Options{
+		Addr: testConfig.RedisUrl,
+		Password: testConfig.RedisPassword,
+	})
 	task := vars.Task{
 		UUID: "76A95DFF-DB7A-446C-8C95-A041243561FD",
 		Url:  "https://example.com",
 		Cron: "1m",
 	}
-	t.Log("I! publishing")
-	err = b.Publish(task)
+	taskInByte, err := json.Marshal(task)
 	if err != nil {
-		t.Errorf("E! publish task fail %v", err)
+		t.Errorf("E! json marshal fail %v", err)
+	}
+	_, err = pubClient.Publish(vars.Channel, string(taskInByte)).Result()
+	if err != nil {
+		t.Errorf("E! redis publish message fail %v", err)
 	}
 
-	time.Sleep(10 * time.Second)
-
-	//select {
-	//case ret := <-subChan:
-	//	t.Logf("I! ret %s", ret)
-	//	//var latency trace.Latency
-	//	//err = json.Unmarshal(ret, &latency)
-	//	//if err != nil {
-	//	//	t.Errorf("E! json unmarshal fail %v", err)
-	//	//}
-	//	//if latency["dns_lookup"] == 0 {
-	//	//	t.Error("E! dns lookup takes 0 ms")
-	//	//}
-	//default:
-	//	t.Error("E! subChan is empty")
-	//}
+	val := <-subChan
+	t.Logf("I! subChan %v", val)
 }
