@@ -11,31 +11,20 @@ import (
 
 func TestConsumer(t *testing.T) {
 
-	testConfig := NewConfig()
-	testConfig.RedisUrl = "127.0.0.1:6379"
-	testConfig.RedisPassword = "redis"
+	testConfig := Config{
+		RedisUrl:      "127.0.0.1:6379",
+		RedisPassword: "redis",
+	}
 
-	testClient := redis.NewClient(&redis.Options{
-		Addr:     testConfig.RedisUrl,
-		Password: testConfig.RedisPassword,
-	})
-	_, err := testClient.Ping().Result()
+	w := NewWorker(testConfig)
+	_, err := w.Client.Ping().Result()
 	if err != nil {
 		t.Fatalf("E! create redis connection fail %v", err)
 	}
-
-	testSubClient := redis.NewClient(&redis.Options{
-		Addr:     testConfig.RedisUrl,
-		Password: testConfig.RedisPassword,
-	})
-	_, err = testSubClient.Ping().Result()
+	_, err = w.SubClient.Ping().Result()
 	if err != nil {
 		t.Fatalf("E! create redis connection fail %v", err)
 	}
-
-	w := NewWorker()
-	w.Client = testClient
-	w.SubClient = testSubClient
 
 	t.Log("I! comsuming")
 	subChan := make(chan string)
@@ -64,5 +53,5 @@ func TestConsumer(t *testing.T) {
 		t.Errorf("E! redis publish message fail %v", err)
 	}
 
-	time.Sleep(time.Second * 30)
+	time.Sleep(time.Second * 5)
 }

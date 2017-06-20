@@ -4,7 +4,6 @@ import (
 	"flag"
 	"log"
 
-	"github.com/go-redis/redis"
 	"github.com/xuqingfeng/pagestat/broker"
 	"github.com/xuqingfeng/pagestat/worker"
 )
@@ -28,31 +27,24 @@ func main() {
 	switch mode {
 	case "broker":
 
-		b := broker.NewBroker()
-
-		client := redis.NewClient(&redis.Options{
-			Addr:     redisUrl,
-			Password: redisPassword,
-		})
-		err := client.Ping().Err()
+		b := broker.NewBroker(broker.Config{RedisUrl: redisUrl, RedisPassword: redisPassword})
+		err := b.Client.Ping().Err()
 		if err != nil {
 			log.Fatalf("E! create redis connection fail %v", err)
 		}
 
-		b.Client = client
 		defer b.Stop()
 
 		// TODO: listen API request and PUBLISH message
 
 	case "worker":
 
-		w := worker.NewWorker()
-
-		client := redis.NewClient(&redis.Options{
-			Addr:     redisUrl,
-			Password: redisPassword,
-		})
-		err := client.Ping().Err()
+		w := worker.NewWorker(worker.Config{RedisUrl: redisUrl, RedisPassword: redisPassword})
+		err := w.Client.Ping().Err()
+		if err != nil {
+			log.Fatalf("E! create redis connection fail %v", err)
+		}
+		err = w.SubClient.Ping().Err()
 		if err != nil {
 			log.Fatalf("E! create redis connection fail %v", err)
 		}

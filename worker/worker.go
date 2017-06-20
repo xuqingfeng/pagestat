@@ -16,9 +16,18 @@ type Worker struct {
 	SubClient *redis.Client
 }
 
-func NewWorker() *Worker {
+func NewWorker(c Config) *Worker {
 
-	return &Worker{}
+	client := redis.NewClient(&redis.Options{
+		Addr:     c.RedisUrl,
+		Password: c.RedisPassword,
+	})
+	subClient := redis.NewClient(&redis.Options{
+		Addr:     c.RedisUrl,
+		Password: c.RedisPassword,
+	})
+
+	return &Worker{client, subClient}
 }
 
 func (w *Worker) Consume(subChan chan string) error {
@@ -57,7 +66,6 @@ func (w *Worker) Consume(subChan chan string) error {
 				if err != nil {
 					log.Println(err)
 				}
-				log.Printf("I! retInByte %s", retInByte)
 				le := listElement{
 					t.UUID,
 					string(retInByte),
@@ -66,7 +74,6 @@ func (w *Worker) Consume(subChan chan string) error {
 				if err != nil {
 					log.Println(err)
 				}
-				log.Printf("I! leInByte %s", leInByte)
 				subChan <- string(leInByte)
 			}
 		}
@@ -78,7 +85,7 @@ func (w *Worker) Consume(subChan chan string) error {
 			select {
 			case leInString := <-subChan:
 
-				log.Printf("I! lenInString %s", leInString)
+				log.Printf("I! leInString %s", leInString)
 				var le listElement
 				if err := json.Unmarshal([]byte(leInString), &le); err != nil {
 					log.Println(err)

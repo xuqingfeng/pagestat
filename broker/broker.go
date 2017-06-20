@@ -12,9 +12,14 @@ type Broker struct {
 	Client *redis.Client
 }
 
-func NewBroker() *Broker {
+func NewBroker(c Config) *Broker {
 
-	return &Broker{}
+	client := redis.NewClient(&redis.Options{
+		Addr:     c.RedisUrl,
+		Password: c.RedisPassword,
+	})
+
+	return &Broker{client}
 }
 
 func (b *Broker) Publish(task vars.Task) error {
