@@ -1,10 +1,22 @@
+sudo: required
+
 language: go
+
+services:
+  - docker
+
 go:
   - 1.8
   - tip
+
 os:
   - linux
+
+before_install:
+  - docker pull redis:alpine
+
 install:
   - go get -v ./...
+
 script:
   - make test
