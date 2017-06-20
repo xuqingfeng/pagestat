@@ -1,8 +1,9 @@
 package worker
 
 import (
-	"testing"
 	"encoding/json"
+	"testing"
+	"time"
 
 	"github.com/go-redis/redis"
 	"github.com/xuqingfeng/pagestat/vars"
@@ -23,8 +24,18 @@ func TestConsumer(t *testing.T) {
 		t.Fatalf("E! create redis connection fail %v", err)
 	}
 
+	testSubClient := redis.NewClient(&redis.Options{
+		Addr:     testConfig.RedisUrl,
+		Password: testConfig.RedisPassword,
+	})
+	_, err = testSubClient.Ping().Result()
+	if err != nil {
+		t.Fatalf("E! create redis connection fail %v", err)
+	}
+
 	w := NewWorker()
 	w.Client = testClient
+	w.SubClient = testSubClient
 
 	t.Log("I! comsuming")
 	subChan := make(chan string)
@@ -35,8 +46,8 @@ func TestConsumer(t *testing.T) {
 
 	// publish message
 	t.Log("I! publishing")
-	pubClient := redis.NewClient(&redis.Options{
-		Addr: testConfig.RedisUrl,
+	testPubClient := redis.NewClient(&redis.Options{
+		Addr:     testConfig.RedisUrl,
 		Password: testConfig.RedisPassword,
 	})
 	task := vars.Task{
@@ -48,11 +59,10 @@ func TestConsumer(t *testing.T) {
 	if err != nil {
 		t.Errorf("E! json marshal fail %v", err)
 	}
-	_, err = pubClient.Publish(vars.Channel, string(taskInByte)).Result()
+	_, err = testPubClient.Publish(vars.Channel, string(taskInByte)).Result()
 	if err != nil {
 		t.Errorf("E! redis publish message fail %v", err)
 	}
 
-	val := <-subChan
-	t.Logf("I! subChan %v", val)
+	time.Sleep(time.Second * 30)
 }

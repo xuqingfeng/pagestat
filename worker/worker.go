@@ -12,7 +12,8 @@ import (
 )
 
 type Worker struct {
-	Client *redis.Client
+	Client    *redis.Client
+	SubClient *redis.Client
 }
 
 func NewWorker() *Worker {
@@ -22,10 +23,17 @@ func NewWorker() *Worker {
 
 func (w *Worker) Consume(subChan chan string) error {
 
-	pubsub := w.Client.Subscribe(vars.Channel)
+	pubsub := w.SubClient.Subscribe(vars.Channel)
 	//defer pubsub.Close()
+	//defer close(subChan)
+
+	type listElement struct {
+		UUID string `json:"uuid"`
+		Ret  string `json:"ret"`
+	}
 
 	go func() {
+		w.Client.Set("sub", "sub", time.Second*30)
 		for {
 			msgi, err := pubsub.Receive()
 			if err != nil {
@@ -37,7 +45,7 @@ func (w *Worker) Consume(subChan chan string) error {
 			// do nothing
 			case *redis.Message:
 
-				// trace and TODO: store results to redis
+				// trace
 				var t vars.Task
 				err := json.Unmarshal([]byte(msg.Payload), &t)
 				if err != nil {
@@ -49,7 +57,38 @@ func (w *Worker) Consume(subChan chan string) error {
 				if err != nil {
 					log.Println(err)
 				}
-				subChan <- string(retInByte)
+				log.Printf("I! retInByte %s", retInByte)
+				le := listElement{
+					t.UUID,
+					string(retInByte),
+				}
+				leInByte, err := json.Marshal(le)
+				if err != nil {
+					log.Println(err)
+				}
+				log.Printf("I! leInByte %s", leInByte)
+				subChan <- string(leInByte)
+			}
+		}
+	}()
+
+	// store results to redis
+	go func() {
+		for {
+			select {
+			case leInString := <-subChan:
+
+				log.Printf("I! lenInString %s", leInString)
+				var le listElement
+				if err := json.Unmarshal([]byte(leInString), &le); err != nil {
+					log.Println(err)
+				}
+				_, err := w.Client.LPush(le.UUID, le.Ret).Result()
+				if err != nil {
+					log.Println(err)
+				}
+			default:
+				time.Sleep(time.Nanosecond * 100)
 			}
 		}
 	}()
