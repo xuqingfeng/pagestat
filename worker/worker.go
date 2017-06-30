@@ -16,7 +16,7 @@ type Worker struct {
 	SubClient *redis.Client
 }
 
-func NewWorker(c Config) *Worker {
+func New(c Config) *Worker {
 
 	client := redis.NewClient(&redis.Options{
 		Addr:     c.RedisUrl,
@@ -42,11 +42,11 @@ func (w *Worker) Consume(subChan chan string) error {
 	}
 
 	go func() {
-		w.Client.Set("sub", "sub", time.Second*30)
 		for {
 			msgi, err := pubsub.Receive()
 			if err != nil {
 				log.Println(err)
+				continue
 			}
 
 			switch msg := msgi.(type) {
@@ -59,12 +59,14 @@ func (w *Worker) Consume(subChan chan string) error {
 				err := json.Unmarshal([]byte(msg.Payload), &t)
 				if err != nil {
 					log.Println(err)
+					continue
 				}
 
 				ret := w.trace(t)
 				retInByte, err := json.Marshal(ret)
 				if err != nil {
 					log.Println(err)
+					continue
 				}
 				le := listElement{
 					t.UUID,
@@ -73,6 +75,7 @@ func (w *Worker) Consume(subChan chan string) error {
 				leInByte, err := json.Marshal(le)
 				if err != nil {
 					log.Println(err)
+					continue
 				}
 				subChan <- string(leInByte)
 			}
@@ -89,10 +92,12 @@ func (w *Worker) Consume(subChan chan string) error {
 				var le listElement
 				if err := json.Unmarshal([]byte(leInString), &le); err != nil {
 					log.Println(err)
+					continue
 				}
 				_, err := w.Client.LPush(le.UUID, le.Ret).Result()
 				if err != nil {
 					log.Println(err)
+					continue
 				}
 			default:
 				time.Sleep(time.Nanosecond * 100)

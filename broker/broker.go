@@ -12,7 +12,7 @@ type Broker struct {
 	Client *redis.Client
 }
 
-func NewBroker(c Config) *Broker {
+func New(c Config) *Broker {
 
 	client := redis.NewClient(&redis.Options{
 		Addr:     c.RedisUrl,

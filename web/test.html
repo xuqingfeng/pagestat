@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script>
+        if (window.WebSocket){
+            let loc = window.location;
+            let wsUrl = 'ws:';
+            if ('https' === loc.schema){
+                wsUrl = 'wss:';
+            }
+//            wsUrl += '//' + loc.host + '/pagestat/v1/trace';
+            wsUrl = 'ws://127.0.0.1:2017/pagestat/v1/trace';
+
+            let ws = new WebSocket(wsUrl);
+            ws.onopen = function(evt){
+                console.info("ws opened");
+
+
+                // send message
+                let task0 = {
+                    url: "https://example.com"
+                };
+
+                ws.send(JSON.stringify(task0));
+            };
+
+            ws.onmessage = function (evt) {
+                console.info("receive message:");
+
+                console.info(evt.data);
+            };
+
+            ws.onclose = function(evt){
+                console.warn("ws closed");
+            };
+
+            ws.onerror = function(evt){
+                console.error("error");
+            };
+
+        }
+    </script>
+</head>
+<body>
+test
+</body>
+</html>

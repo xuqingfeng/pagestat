@@ -16,7 +16,7 @@ func TestConsumer(t *testing.T) {
 		RedisPassword: "redis",
 	}
 
-	w := NewWorker(testConfig)
+	w := New(testConfig)
 	_, err := w.Client.Ping().Result()
 	if err != nil {
 		t.Fatalf("E! create redis connection fail %v", err)

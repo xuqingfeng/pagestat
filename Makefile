@@ -8,7 +8,7 @@ fmt:
 	go fmt ./...
 
 build: fmt
-	go build ./cmd/pagestat -o ./out
+	go build -o ./out/pagestat ./cmd/pagestat
 
 run: build
 	./out/pagestat -mode broker

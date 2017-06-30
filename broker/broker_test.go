@@ -13,7 +13,7 @@ func TestPublish(t *testing.T) {
 		RedisPassword: "redis",
 	}
 
-	b := NewBroker(testConfig)
+	b := New(testConfig)
 	defer b.Stop()
 
 	_, err := b.Client.Ping().Result()
